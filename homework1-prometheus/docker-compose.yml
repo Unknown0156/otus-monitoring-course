@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - 80:80
+    volumes:
+      - static_volume:/var/www/static
+      - media_volume:/var/www/media
+    depends_on:
+      - app
+
+  app:
+    build: ./app
+    command: >
+      /bin/sh -c "python3 manage.py makemigrations
+      && python3 manage.py migrate
+      && python3 manage.py collectstatic --noinput
+      && python3 manage.py createsuperuser --noinput --username $DJANGO_SUPERUSER_USERNAME --email $DJANGO_SUPERUSER_EMAIL
+      ; gunicorn -w '2' --bind 0.0.0.0:8000 mymusic.wsgi:application"
+    environment:
+      - APP_ENVIRONMENT
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - DJANGO_SUPERUSER_USERNAME
+      - DJANGO_SUPERUSER_EMAIL
+      - DJANGO_SUPERUSER_PASSWORD
+      
+    volumes:
+      - static_volume:/mymusic/static
+      - media_volume:/mymusic/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PORT
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  static_volume:
+  media_volume:
+  postgres_data:
