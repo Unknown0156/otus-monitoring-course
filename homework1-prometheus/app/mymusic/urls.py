@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf.urls import include
 from musicapp import views
 
 
@@ -22,4 +23,5 @@ urlpatterns = [
     path('', views.index),
     path('health', views.health),
     path('admin/', admin.site.urls),
+    path('', include('django_prometheus.urls')),
 ]
