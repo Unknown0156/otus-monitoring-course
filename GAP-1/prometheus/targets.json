@@ -1,10 +1,11 @@
 [
     {
       "labels": {
-        "job": "node-exporter"
+        "job": "node-exporter",
+        "__metrics_path__": "/metrics/node"
       },
       "targets": [
-        "host.docker.internal:9100"
+        "host.docker.internal:80"
       ]
     }
   ]
