@@ -9,13 +9,19 @@ services:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - static_volume:/var/www/static
       - media_volume:/var/www/media
+    networks:
+      - app
     depends_on:
       - app
 
   nginx-prometheus-exporter:
     image: nginx/nginx-prometheus-exporter:1.1.2
+    ports:
+      - 9113:9113
     command:
       - -nginx.scrape-uri=http://nginx/nginx_status
+    networks:
+      - app
     depends_on:
       - nginx
 
@@ -40,6 +46,8 @@ services:
     volumes:
       - static_volume:/mymusic/static
       - media_volume:/mymusic/media
+    networks:
+      - app
     depends_on:
       db:
         condition: service_healthy
@@ -59,11 +67,45 @@ services:
       timeout: 10s
       retries: 3
       start_period: 5s
+    networks:
+      - app
+
+  postgres-prometheus-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    ports:
+      - 9187:9187
+    environment:
+      - DATA_SOURCE_URI=db:5432/postgres?sslmode=disable
+      - DATA_SOURCE_USER
+      - DATA_SOURCE_PASS
+    networks:
+      - app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    ports:
+      - 9100:9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - app
 
   prometheus:
     image: prom/prometheus:v2.52.0
     ports:
       - 9090:9090
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/alertrules.yml:/etc/prometheus/alertrules.yml
@@ -73,6 +115,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=7d'
       - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - monitoring
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
@@ -83,6 +127,8 @@ services:
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
       - --cluster.listen-address=
+    networks:
+      - monitoring
 
   grafana:
     image: grafana/grafana:10.1.10
@@ -93,20 +139,18 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - monitoring
     depends_on:
       - prometheus
 
-  node-exporter:
-    image: prom/node-exporter:v1.8.1
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+
+networks:
+  app:
+    driver: bridge
+  monitoring:
+    driver: bridge
 
 volumes:
   static_volume:
