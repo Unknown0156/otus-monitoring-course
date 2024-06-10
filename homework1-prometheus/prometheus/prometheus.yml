@@ -24,3 +24,6 @@ scrape_configs:
   file_sd_configs:
   - files:
     - 'targets.json'
+- job_name: 'nginx'
+  static_configs:
+    - targets: ['nginx-prometheus-exporter:9113']
