@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "alertmanager:9093" 
+rule_files:
+  - alertrules.yml
+
+scrape_configs:
+- job_name: 'Prometheus'
+  static_configs:
+    - targets: ['localhost:9090']
+- job_name: 'Alertmanager'
+  static_configs:
+    - targets: ['alertmanager:9093']
+- job_name: 'Grafana'
+  static_configs:
+    - targets: ['grafana:3000']
+- job_name: 'Node'
+  file_sd_configs:
+  - files:
+    - 'targets.json'

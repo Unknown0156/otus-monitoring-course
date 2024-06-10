@@ -1,0 +1,10 @@
+[
+    {
+      "labels": {
+        "job": "Node"
+      },
+      "targets": [
+        "node-exporter:9100"
+      ]
+    }
+  ]
