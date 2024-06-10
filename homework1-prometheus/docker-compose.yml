@@ -144,7 +144,16 @@ services:
     depends_on:
       - prometheus
 
-
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./blackbox/blackbox.yml:/config/blackbox.yml
+    command:
+      - '--config.file=/config/blackbox.yml'
+    networks:
+      - monitoring
 
 networks:
   app:
