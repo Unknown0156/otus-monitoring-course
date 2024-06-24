@@ -1,0 +1,25 @@
+zabbix_export:
+  version: '6.4'
+  template_groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 57d9d6c5d18d421cb634430b0ae011b9
+      template: otus_important_metrics
+      name: otus_important_metrics
+      description: otus_important_metrics
+      groups:
+        - name: Templates
+      discovery_rules:
+        - uuid: ad8fb3b65c334063b94a703f9e9ed234
+          name: otus_important_metrics
+          key: otus.discovery
+          item_prototypes:
+            - uuid: dbb41082f2f8419f8ce7e41871d9f5f3
+              name: 'otus_important_metrics [{#OTUS_METRIC}]'
+              key: 'otus.metric[{#OTUS_METRIC}]'
+              trigger_prototypes:
+                - uuid: a790384f544a41bfb5205705ccf38ae3
+                  expression: 'last(/otus_important_metrics/otus.metric[{#OTUS_METRIC}],#1)>=95'
+                  name: 'otus_important_metrics [{#OTUS_METRIC}]  >= 95'
+                  priority: WARNING
